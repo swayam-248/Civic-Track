@@ -108,36 +108,42 @@ async function main() {
   console.log("Seeding MongoDB demo accounts...");
   const userColl = db.collection("User");
   const adminPasswordHash = await bcrypt.hash("Admin@1234", 10);
-  let admin = await userColl.findOne({ email: "admin@civictrack.gov.in" });
-  if (!admin) {
-    const res = await userColl.insertOne({
-      name: "Admin User",
-      email: "admin@civictrack.gov.in",
-      passwordHash: adminPasswordHash,
-      role: "ADMIN",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    admin = { _id: res.insertedId, id: res.insertedId.toString() };
-  } else {
-    admin.id = admin._id.toString();
-  }
+  await userColl.updateOne(
+    { email: "admin@civictrack.gov.in" },
+    {
+      $set: {
+        name: "Admin User",
+        email: "admin@civictrack.gov.in",
+        passwordHash: adminPasswordHash,
+        role: "ADMIN",
+        updatedAt: new Date(),
+      },
+      $setOnInsert: {
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true }
+  );
 
   const citizenPasswordHash = await bcrypt.hash("Citizen@1234", 10);
-  let citizen = await userColl.findOne({ email: "rahul@example.com" });
-  if (!citizen) {
-    const res = await userColl.insertOne({
-      name: "Rahul Sharma",
-      email: "rahul@example.com",
-      passwordHash: citizenPasswordHash,
-      role: "CITIZEN",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    citizen = { _id: res.insertedId, id: res.insertedId.toString() };
-  } else {
-    citizen.id = citizen._id.toString();
-  }
+  await userColl.updateOne(
+    { email: "rahul@example.com" },
+    {
+      $set: {
+        name: "Rahul Sharma",
+        email: "rahul@example.com",
+        passwordHash: citizenPasswordHash,
+        role: "CITIZEN",
+        updatedAt: new Date(),
+      },
+      $setOnInsert: {
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true }
+  );
+  const admin = await userColl.findOne({ email: "admin@civictrack.gov.in" });
+  const citizen = await userColl.findOne({ email: "rahul@example.com" });
 
   const compColl = db.collection("Complaint");
   const statusColl = db.collection("StatusUpdate");
