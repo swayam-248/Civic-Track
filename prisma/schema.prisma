@@ -1,0 +1,85 @@
+// CivicTrack database schema for MongoDB
+// Run `npm run db:push` or `npx prisma db push` to sync indexes
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CITIZEN
+  ADMIN
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+}
+
+model User {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(CITIZEN)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  complaints   Complaint[]
+}
+
+model Department {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  name       String      @unique
+  categories Category[]
+  complaints Complaint[]
+}
+
+model Category {
+  id           String     @id @map("_id") // slug, e.g. "pothole"
+  name         String
+  description  String
+  icon         String
+  departmentId String     @db.ObjectId
+  department   Department @relation(fields: [departmentId], references: [id])
+  complaints   Complaint[]
+}
+
+model Complaint {
+  id               String          @id @default(auto()) @map("_id") @db.ObjectId
+  referenceCode    String          @unique
+  description      String
+  location         String
+  latitude         Float?
+  longitude        Float?
+  imageUrl         String?
+  status           ComplaintStatus @default(SUBMITTED)
+  confidenceScore  Int?
+  resolutionNote   String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  resolvedAt       DateTime?
+
+  categoryId       String
+  category         Category        @relation(fields: [categoryId], references: [id])
+  departmentId     String          @db.ObjectId
+  department       Department      @relation(fields: [departmentId], references: [id])
+  reportedById     String          @db.ObjectId
+  reportedBy       User            @relation(fields: [reportedById], references: [id])
+
+  statusUpdates    StatusUpdate[]
+}
+
+model StatusUpdate {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  complaintId String          @db.ObjectId
+  complaint   Complaint       @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  status      ComplaintStatus
+  note        String?
+  createdAt   DateTime        @default(now())
+}
