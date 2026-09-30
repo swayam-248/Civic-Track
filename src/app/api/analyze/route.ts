@@ -241,10 +241,25 @@ export async function POST(req: Request) {
 
   if (imageUrl) {
     try {
-      const filePath = path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
-      const buffer = await readFile(filePath);
-      const ext = path.extname(filePath).toLowerCase();
-      const mimeType = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
+      let buffer: Buffer;
+      let mimeType = "image/jpeg";
+
+      if (imageUrl.startsWith("data:")) {
+        const matches = imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          mimeType = matches[1];
+          buffer = Buffer.from(matches[2], "base64");
+        } else {
+          const parts = imageUrl.split(",");
+          buffer = Buffer.from(parts[1] || "", "base64");
+        }
+      } else {
+        const filePath = path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
+        buffer = await readFile(filePath);
+        const ext = path.extname(filePath).toLowerCase();
+        mimeType = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
+      }
+
       const base64Image = buffer.toString("base64");
 
       // 1. Try OpenRouter Vision if an OpenRouter key is provided

@@ -130,15 +130,19 @@ export default function ReportIssuePage() {
   // --- Handle file selection (validates type and size) ---
   const handleFile = useCallback(
     (selectedFile) => {
-      if (!selectedFile.type.match(/^image\/(jpeg|png|webp)$/)) {
+      const isImg =
+        (selectedFile.type && selectedFile.type.startsWith("image/")) ||
+        /\.(jpe?g|png|webp|jfif|gif|avif|heic|heif)$/i.test(selectedFile.name || "");
+
+      if (!isImg) {
         toast.error("Invalid format", {
-          description: "Please upload a JPG, PNG, or WEBP image.",
+          description: "Please upload an image file (JPG, PNG, WEBP, GIF, AVIF).",
         });
         return;
       }
-      if (selectedFile.size > 10 * 1024 * 1024) {
+      if (selectedFile.size > 15 * 1024 * 1024) {
         toast.error("File too large", {
-          description: "Please upload an image under 10MB.",
+          description: "Please upload an image under 15MB.",
         });
         return;
       }
@@ -216,7 +220,7 @@ export default function ReportIssuePage() {
         } catch (err) {
           if (!cancelled) {
             toast.error("Upload failed", {
-              description: "Could not upload your photo. Please try again.",
+              description: err?.message || "Could not upload your photo. Please try again.",
             });
             setAiProcessing(false);
           }
@@ -476,7 +480,7 @@ export default function ReportIssuePage() {
                         accurately.
                       </p>
                       <p className="mt-2 text-xs text-slate-400">
-                        JPG, PNG, WEBP up to 10MB
+                        JPG, PNG, WEBP, GIF up to 15MB
                       </p>
                     </div>
                   ) : (
@@ -501,7 +505,7 @@ export default function ReportIssuePage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/*"
                     onChange={handleFileInput}
                     className="hidden"
                   />
